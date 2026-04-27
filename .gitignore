@@ -6,5 +6,6 @@
 *.out
 *.exe
 
-# SFML / C++
-build/
+# Python
+__pycache__/
+*.pyc
