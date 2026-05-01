@@ -1,241 +1,378 @@
-import pygame
 import random
 import sys
 
+import pygame
+
+from games import BreakoutGame, PongGame, SnakeGame
+
 pygame.init()
-screen = pygame.display.set_mode((800, 600))
+
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Arcade Games")
 clock = pygame.time.Clock()
 
-font = pygame.font.Font(None, 50)
-big_font = pygame.font.Font(None, 80)
+font = pygame.font.Font(None, 42)
+small_font = pygame.font.Font(None, 28)
+tiny_font = pygame.font.Font(None, 24)
+big_font = pygame.font.Font(None, 88)
+title_font = pygame.font.Font(None, 92)
 
-# Colors
-BG = (15, 18, 40)
-PLAYER_COLOR = (0, 255, 200)
-CPU_COLOR = (255, 80, 180)
-BALL_COLOR = (255, 255, 255)
+COLORS = {
+    "sky_top": (244, 251, 255),
+    "sky_bottom": (224, 239, 255),
+    "panel": (255, 255, 255),
+    "panel_soft": (245, 249, 255),
+    "panel_border": (184, 209, 240),
+    "ink": (36, 55, 95),
+    "ink_soft": (92, 116, 160),
+    "player": (49, 168, 255),
+    "cpu": (255, 109, 161),
+    "ball": (255, 204, 87),
+    "ball_glow": (255, 238, 176),
+    "ball_outline": (36, 55, 95),
+    "accent": (255, 194, 76),
+    "accent_dark": (216, 135, 27),
+    "snake_body": (93, 214, 187),
+    "divider": (175, 198, 255),
+    "mint": (173, 239, 221),
+    "lavender": (215, 205, 255),
+}
+BRICK_COLORS = [(255, 126, 163), (255, 174, 89), (255, 214, 102), (106, 214, 173)]
 
-# Paddle
-paddle = pygame.Rect(50, 250, 10, 100)
-paddle_speed = 300
-
-# Right paddle
-cpu_paddle = pygame.Rect(740, 250, 10, 100)
-
-# Ball
-ball = pygame.Rect(400, 300, 15, 15)
-ball_pos = [400.0, 300.0]
-ball_speed_x = 220
-ball_speed_y = 180
-
-# Score
-player_score = 0
-cpu_score = 0
-WIN_SCORE = 5
-
-# States
 state = "menu"
-game_mode = "cpu"
-difficulty = "Medium"
-prev_state = "play"
-
-difficulty_map = {"Easy": 2.5, "Medium": 4.0, "Hard": 6.0}
-
+active_game = "pong"
+game_over_message = ""
+selected_setup = "pong"
 particles = []
-shake_timer = 0
-trail = []
+shake_timer = 0.0
 
-def reset_ball(direction):
-    global ball_pos, ball_speed_x, ball_speed_y
-    ball_pos = [400.0, 300.0]
-    ball_speed_x = 220 * direction
-    ball_speed_y = random.choice([-180, 180])
+SETUP_OPTIONS = {
+    "pong": {
+        "title": "Pong Setup",
+        "subtitle": "Pick your match style",
+        "options": [
+            ("1", "Easy CPU", "Relaxed rallies, slower tracking"),
+            ("2", "Medium CPU", "Balanced back-and-forth"),
+            ("3", "Hard CPU", "Fast, punishing returns"),
+            ("4", "Vs Player", "Left paddle W/S, right paddle arrows"),
+        ],
+    },
+    "snake": {
+        "title": "Snake Setup",
+        "subtitle": "Choose the pace",
+        "options": [
+            ("1", "Chill", "More breathing room between turns"),
+            ("2", "Classic", "Arcade baseline speed"),
+            ("3", "Turbo", "Sharper, faster runs"),
+        ],
+    },
+    "breakout": {
+        "title": "Breakout Setup",
+        "subtitle": "Choose the challenge",
+        "options": [
+            ("1", "Zen", "More lives and a wider paddle"),
+            ("2", "Classic", "Standard balance"),
+            ("3", "Rush", "Fewer lives, smaller paddle, faster ball"),
+        ],
+    },
+}
+
 
 def spawn_particles(x, y, color):
     global shake_timer
-    shake_timer = 0.2
-    for _ in range(10):
-        particles.append([
-            [x, y],
-            [random.uniform(-120,120), random.uniform(-120,120)],
-            random.randint(3,6),
-            color
-        ])
+    shake_timer = 0.18
+    for _ in range(12):
+        particles.append(
+            [[x, y], [random.uniform(-160, 160), random.uniform(-160, 160)], random.randint(2, 5), color]
+        )
+
+
+def update_particles(dt):
+    for particle in particles[:]:
+        particle[0][0] += particle[1][0] * dt
+        particle[0][1] += particle[1][1] * dt
+        particle[2] -= 8 * dt
+        if particle[2] <= 0:
+            particles.remove(particle)
+
+
+pong = PongGame(WIDTH, HEIGHT, font, small_font, COLORS, spawn_particles)
+snake = SnakeGame(WIDTH, HEIGHT, font, COLORS, spawn_particles)
+breakout = BreakoutGame(WIDTH, HEIGHT, font, COLORS, BRICK_COLORS, spawn_particles)
+games = {"pong": pong, "snake": snake, "breakout": breakout}
+
+
+def center_text(text, text_font, color, y):
+    surface = text_font.render(text, True, color)
+    rect = surface.get_rect(center=(WIDTH // 2, y))
+    screen.blit(surface, rect)
+
+
+def draw_wrapped_text(text, text_font, color, x, y, max_width, line_gap):
+    words = text.split()
+    lines = []
+    current = ""
+    for word in words:
+        trial = f"{current} {word}".strip()
+        if text_font.size(trial)[0] <= max_width or not current:
+            current = trial
+        else:
+            lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+
+    for index, line in enumerate(lines):
+        surface = text_font.render(line, True, color)
+        screen.blit(surface, (x, y + index * line_gap))
+
+
+def draw_background():
+    for y in range(HEIGHT):
+        progress = y / HEIGHT
+        color = (
+            int(COLORS["sky_top"][0] * (1 - progress) + COLORS["sky_bottom"][0] * progress),
+            int(COLORS["sky_top"][1] * (1 - progress) + COLORS["sky_bottom"][1] * progress),
+            int(COLORS["sky_top"][2] * (1 - progress) + COLORS["sky_bottom"][2] * progress),
+        )
+        pygame.draw.line(screen, color, (0, y), (WIDTH, y))
+
+    pygame.draw.circle(screen, COLORS["mint"], (120, 110), 120)
+    pygame.draw.circle(screen, COLORS["lavender"], (690, 100), 105)
+    pygame.draw.circle(screen, (255, 230, 170), (740, 520), 145)
+    pygame.draw.circle(screen, (204, 238, 255), (90, 520), 130)
+
+    panel_rect = pygame.Rect(44, 36, WIDTH - 88, HEIGHT - 72)
+    shadow_rect = panel_rect.move(0, 10)
+    pygame.draw.rect(screen, (205, 221, 245), shadow_rect, border_radius=34)
+    pygame.draw.rect(screen, COLORS["panel"], panel_rect, border_radius=34)
+    pygame.draw.rect(screen, COLORS["panel_border"], panel_rect, 3, border_radius=34)
+
+
+def start_game(game_name):
+    global active_game, state, game_over_message
+    active_game = game_name
+    game_over_message = ""
+    games[game_name].reset()
+    state = "play"
+
+
+def set_game_over(message):
+    global state, game_over_message
+    game_over_message = message
+    state = "game_over"
+
+
+def open_setup(game_name):
+    global selected_setup, state
+    selected_setup = game_name
+    state = "setup"
+
+
+def apply_setup_choice(choice):
+    if selected_setup == "pong":
+        if choice == pygame.K_1:
+            pong.set_difficulty("Easy")
+            pong.reset("cpu")
+            start_game("pong")
+        elif choice == pygame.K_2:
+            pong.set_difficulty("Medium")
+            pong.reset("cpu")
+            start_game("pong")
+        elif choice == pygame.K_3:
+            pong.set_difficulty("Hard")
+            pong.reset("cpu")
+            start_game("pong")
+        elif choice == pygame.K_4:
+            pong.reset("player")
+            start_game("pong")
+    elif selected_setup == "snake":
+        if choice == pygame.K_1:
+            snake.set_preset("Chill")
+            start_game("snake")
+        elif choice == pygame.K_2:
+            snake.set_preset("Classic")
+            start_game("snake")
+        elif choice == pygame.K_3:
+            snake.set_preset("Turbo")
+            start_game("snake")
+    elif selected_setup == "breakout":
+        if choice == pygame.K_1:
+            breakout.set_preset("Zen")
+            start_game("breakout")
+        elif choice == pygame.K_2:
+            breakout.set_preset("Classic")
+            start_game("breakout")
+        elif choice == pygame.K_3:
+            breakout.set_preset("Rush")
+            start_game("breakout")
+
+
+def draw_home_card(x, y, width, height, accent, number, title, body):
+    rect = pygame.Rect(x, y, width, height)
+    pygame.draw.rect(screen, COLORS["panel_soft"], rect, border_radius=24)
+    pygame.draw.rect(screen, accent, rect, 3, border_radius=24)
+    bubble = pygame.Rect(x + 18, y + 18, 42, 42)
+    pygame.draw.ellipse(screen, accent, bubble)
+    num_surface = small_font.render(number, True, COLORS["panel"])
+    screen.blit(num_surface, num_surface.get_rect(center=bubble.center))
+    title_surface = font.render(title, True, COLORS["ink"])
+    screen.blit(title_surface, (x + 18, y + 76))
+    draw_wrapped_text(body, tiny_font, COLORS["ink_soft"], x + 18, y + 122, width - 36, 22)
+
+
+def draw_menu():
+    center_text("Arcade Daydream", title_font, COLORS["ink"], 118)
+    center_text("Pick a game, then tune it on the next screen.", small_font, COLORS["ink_soft"], 170)
+
+    draw_home_card(70, 225, 200, 170, COLORS["player"], "1", "Pong", "Snappy rallies and versus play")
+    draw_home_card(300, 225, 200, 170, COLORS["accent"], "2", "Snake", "Choose a pace and chase score")
+    draw_home_card(530, 225, 200, 170, COLORS["cpu"], "3", "Breakout", "Colorful bricks and paddle angles")
+
+    center_text("Press 1, 2, or 3", font, COLORS["ink"], 455)
+    center_text("Q quits from anywhere", small_font, COLORS["ink_soft"], 500)
+
+
+def draw_setup():
+    config = SETUP_OPTIONS[selected_setup]
+    center_text(config["title"], big_font, COLORS["ink"], 118)
+    center_text(config["subtitle"], small_font, COLORS["ink_soft"], 164)
+
+    card_y = 198
+    for index, (key_label, title, description) in enumerate(config["options"]):
+        rect = pygame.Rect(110, card_y + index * 84, 580, 64)
+        border = [COLORS["player"], COLORS["accent"], COLORS["cpu"], COLORS["lavender"]][index % 4]
+        pygame.draw.rect(screen, COLORS["panel_soft"], rect, border_radius=22)
+        pygame.draw.rect(screen, border, rect, 3, border_radius=22)
+
+        key_surface = font.render(key_label, True, border if isinstance(border, tuple) else COLORS["ink"])
+        title_surface = font.render(title, True, COLORS["ink"])
+        desc_surface = small_font.render(description, True, COLORS["ink_soft"])
+
+        screen.blit(key_surface, (132, rect.y + 13))
+        screen.blit(title_surface, (190, rect.y + 7))
+        screen.blit(desc_surface, (190, rect.y + 35))
+
+    center_text("ESC returns to the game picker", small_font, COLORS["ink_soft"], 552)
+
+
+def draw_pause():
+    overlay = pygame.Rect(180, 188, 440, 180)
+    pygame.draw.rect(screen, (255, 255, 255), overlay, border_radius=26)
+    pygame.draw.rect(screen, COLORS["panel_border"], overlay, 3, border_radius=26)
+    center_text("Paused", big_font, COLORS["ink"], 250)
+    center_text("P resumes", font, COLORS["ink"], 304)
+    center_text("ESC returns to the menu", small_font, COLORS["ink_soft"], 344)
+
+
+def draw_game_over():
+    center_text("Game Over", big_font, COLORS["ink"], 182)
+    center_text(game_over_message, font, COLORS["accent_dark"], 264)
+    center_text("Press any key to head back to the menu", small_font, COLORS["ink_soft"], 332)
+
 
 running = True
 while running:
-    dt = clock.tick(60)/1000
+    dt = clock.tick(120) / 1000
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-        if event.type == pygame.KEYDOWN:
-
-            # quit anywhere
+        elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_q:
                 pygame.quit()
                 sys.exit()
 
-            # ESC = go back / quit
             if event.key == pygame.K_ESCAPE:
-                if state in ["settings", "pause"]:
-                    state = prev_state
-                elif state == "menu":
+                if state == "menu":
                     pygame.quit()
                     sys.exit()
+                if state in ("setup", "pause", "game_over"):
+                    state = "menu"
+                elif state == "play":
+                    state = "pause"
+                continue
 
-            # pause toggle
+            if state == "menu":
+                if event.key == pygame.K_1:
+                    open_setup("pong")
+                elif event.key == pygame.K_2:
+                    open_setup("snake")
+                elif event.key == pygame.K_3:
+                    open_setup("breakout")
+                continue
+
+            if state == "setup":
+                apply_setup_choice(event.key)
+                continue
+
             if event.key == pygame.K_p and state == "play":
-                prev_state = "play"
                 state = "pause"
-            elif event.key == pygame.K_p and state == "pause":
+                continue
+            if event.key == pygame.K_p and state == "pause":
                 state = "play"
+                continue
 
-            # settings (O key now)
-            elif event.key == pygame.K_o and state in ["play","pause"]:
-                prev_state = state
-                state = "settings"
-
-            # menu
-            elif state == "menu":
-                if event.key == pygame.K_1:
-                    game_mode = "cpu"; difficulty = "Easy"; state="start"
-                elif event.key == pygame.K_2:
-                    game_mode = "cpu"; difficulty = "Medium"; state="start"
-                elif event.key == pygame.K_3:
-                    game_mode = "cpu"; difficulty = "Hard"; state="start"
-                elif event.key == pygame.K_4:
-                    game_mode = "player"; state="start"
-
-            elif state == "start":
-                state = "play"
-
-            elif state == "game_over":
-                player_score = 0
-                cpu_score = 0
+            if state == "game_over":
                 state = "menu"
+                continue
 
-            elif state == "settings":
-                if event.key == pygame.K_1:
-                    difficulty = "Easy"
-                elif event.key == pygame.K_2:
-                    difficulty = "Medium"
-                elif event.key == pygame.K_3:
-                    difficulty = "Hard"
+            if state == "play" and active_game == "snake":
+                snake.handle_keydown(event.key)
 
     if state == "play":
         keys = pygame.key.get_pressed()
-
-        # player 1
-        if keys[pygame.K_w]:
-            paddle.y -= paddle_speed*dt
-        if keys[pygame.K_s]:
-            paddle.y += paddle_speed*dt
-
-        # right paddle
-        if game_mode == "cpu":
-            diff = ball_pos[1] - cpu_paddle.centery
-            cpu_paddle.y += diff * difficulty_map[difficulty] * dt
+        if active_game == "pong":
+            message = pong.update(dt, keys)
+        elif active_game == "snake":
+            message = snake.update(dt)
         else:
-            if keys[pygame.K_UP]:
-                cpu_paddle.y -= paddle_speed*dt
-            if keys[pygame.K_DOWN]:
-                cpu_paddle.y += paddle_speed*dt
+            message = breakout.update(dt, keys)
+        if message:
+            set_game_over(message)
 
-        paddle.top = max(paddle.top,0)
-        paddle.bottom = min(paddle.bottom,600)
-        cpu_paddle.top = max(cpu_paddle.top,0)
-        cpu_paddle.bottom = min(cpu_paddle.bottom,600)
+    update_particles(dt)
 
-        # move ball
-        ball_pos[0] += ball_speed_x*dt
-        ball_pos[1] += ball_speed_y*dt
-
-        # walls
-        if ball_pos[1] - ball.height/2 <= 0:
-            ball_pos[1] = ball.height/2
-            ball_speed_y = abs(ball_speed_y)
-        if ball_pos[1] + ball.height/2 >= 600:
-            ball_pos[1] = 600 - ball.height/2
-            ball_speed_y = -abs(ball_speed_y)
-
-        ball.center = (int(ball_pos[0]), int(ball_pos[1]))
-
-        # trail
-        trail.append(tuple(ball.center))
-        if len(trail) > 10:
-            trail.pop(0)
-
-        # collisions
-        if ball.colliderect(paddle):
-            ball.left = paddle.right
-            ball_pos[0] = ball.centerx
-            ball_speed_x *= -1
-            spawn_particles(*ball.center, PLAYER_COLOR)
-
-        if ball.colliderect(cpu_paddle):
-            ball.right = cpu_paddle.left
-            ball_pos[0] = ball.centerx
-            ball_speed_x *= -1
-            spawn_particles(*ball.center, CPU_COLOR)
-
-        # scoring
-        if ball.left <= 0:
-            cpu_score += 1
-            reset_ball(1)
-        if ball.right >= 800:
-            player_score += 1
-            reset_ball(-1)
-
-        if player_score >= WIN_SCORE or cpu_score >= WIN_SCORE:
-            state = "game_over"
-
-    # shake
-    offset_x = offset_y = 0
+    offset_x = 0
+    offset_y = 0
     if shake_timer > 0:
         shake_timer -= dt
-        offset_x = random.randint(-5,5)
-        offset_y = random.randint(-5,5)
+        offset_x = random.randint(-4, 4)
+        offset_y = random.randint(-4, 4)
 
-    # render
-    screen.fill(BG)
+    draw_background()
 
     if state == "menu":
-        screen.blit(big_font.render("PONG",True,(255,255,255)),(300,120))
-        screen.blit(font.render("1 - Easy CPU",True,PLAYER_COLOR),(280,260))
-        screen.blit(font.render("2 - Medium CPU",True,(255,255,255)),(260,310))
-        screen.blit(font.render("3 - Hard CPU",True,CPU_COLOR),(280,360))
-        screen.blit(font.render("4 - vs Player",True,(200,200,200)),(280,410))
-        screen.blit(font.render("Q to quit",True,(150,150,150)),(310,500))
-
+        draw_menu()
+    elif state == "setup":
+        draw_setup()
     elif state == "play":
-        pygame.draw.line(screen,(100,100,255),(400,0),(400,600),2)
-        pygame.draw.rect(screen,PLAYER_COLOR,paddle.move(offset_x,offset_y))
-        pygame.draw.rect(screen,CPU_COLOR,cpu_paddle.move(offset_x,offset_y))
-        pygame.draw.ellipse(screen,BALL_COLOR,ball.move(offset_x,offset_y))
-
-        for pos in trail:
-            pygame.draw.circle(screen,(255,255,255),pos,5)
-
-        screen.blit(font.render(str(player_score),True,PLAYER_COLOR),(300,20))
-        screen.blit(font.render(str(cpu_score),True,CPU_COLOR),(460,20))
-
+        if active_game == "pong":
+            pong.draw(screen, offset_x, offset_y)
+        elif active_game == "snake":
+            snake.draw(screen)
+        else:
+            breakout.draw(screen)
     elif state == "pause":
-        screen.blit(big_font.render("PAUSED",True,(255,255,255)),(260,250))
-        screen.blit(font.render("P to resume",True,(200,200,200)),(300,320))
-        screen.blit(font.render("O for settings",True,(200,200,200)),(270,370))
-
-    elif state == "settings":
-        screen.blit(big_font.render("SETTINGS",True,(255,255,255)),(240,150))
-        screen.blit(font.render("1 Easy  2 Medium  3 Hard",True,(255,255,255)),(200,300))
-        screen.blit(font.render(f"Current: {difficulty}",True,(200,200,200)),(260,400))
-        screen.blit(font.render("ESC to go back",True,(150,150,150)),(260,500))
-
+        if active_game == "pong":
+            pong.draw(screen)
+        elif active_game == "snake":
+            snake.draw(screen)
+        else:
+            breakout.draw(screen)
+        draw_pause()
     elif state == "game_over":
-        winner = "You Win!" if player_score > cpu_score else "CPU Wins!"
-        screen.blit(big_font.render(winner,True,(255,255,255)),(200,200))
-        screen.blit(font.render("Press any key",True,(200,200,200)),(280,300))
+        draw_game_over()
+
+    for particle in particles:
+        pygame.draw.circle(
+            screen,
+            particle[3],
+            (int(particle[0][0]) + offset_x, int(particle[0][1]) + offset_y),
+            max(1, int(particle[2])),
+        )
 
     pygame.display.flip()
 

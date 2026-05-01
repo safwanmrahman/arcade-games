@@ -8,10 +8,10 @@ This project implements a lightweight arcade platform with a focus on real-time 
 
 Currently implemented:
 - Pong
-
-Planned:
 - Snake
 - Breakout
+
+Planned:
 - Sudoku
 - Space Invaders
 - Flappy Bird
@@ -20,17 +20,19 @@ Planned:
 ## Features
 
 ### Gameplay
-- Player vs CPU with adjustable difficulty
-- Player vs Player mode (W/S vs Arrow Keys)
+- Pong with adjustable CPU difficulty and local versus mode
+- Snake with grid-based movement and score tracking
+- Breakout with lives, brick collision, and paddle angle control
 - Time-based movement using delta time for smooth gameplay
 - Accurate collision detection and response
 
 ### System Design
-- State-based architecture (menu, play, pause, settings, game over)
-- Modular design for adding new games
+- State-based architecture (menu, setup, play, pause, game over)
+- Separate game modules under `games/`
 - Centralized input handling
 
 ### Visuals
+- Brighter layered background with card-style menus
 - Particle effects on collisions
 - Screen shake for feedback
 - Ball trail for motion clarity
@@ -40,12 +42,29 @@ Planned:
 
 | Key | Action |
 |-----|--------|
+| 1 / 2 / 3 | Choose Pong / Snake / Breakout from the main menu |
+| 1 / 2 / 3 / 4 | Choose an option on the setup screen |
 | W / S | Move left paddle |
 | Up / Down | Move right paddle |
+| Arrow Keys / WASD | Control Snake or Breakout |
 | P | Pause / Resume |
-| O | Open settings |
 | ESC | Go back / Exit menu |
 | Q | Quit game |
+
+## Project Structure
+
+```text
+arcade-games/
+├── games/
+│   ├── __init__.py
+│   ├── breakout.py
+│   ├── pong.py
+│   └── snake.py
+├── .gitignore
+├── LICENSE
+├── README.md
+└── main.py
+```
 
 ## Pong Details
 
@@ -54,6 +73,17 @@ The Pong implementation includes:
 - CPU paddle with adjustable tracking behavior
 - Real-time score tracking and win condition
 - Pause and settings menus accessible during gameplay
+
+## Other Games
+
+Snake includes:
+- Grid-based movement with food spawning
+- Score tracking and collision-based game over
+
+Breakout includes:
+- Brick field destruction and score tracking
+- Paddle-controlled bounce angles
+- Life system with round resets
 
 ## Installation
 
