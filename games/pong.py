@@ -14,6 +14,7 @@ class PongGame:
         self.small_font = small_font
         self.colors = colors
         self.spawn_particles = spawn_particles
+        self.header_height = 72
         self.difficulty = "Medium"
         self.difficulty_map = {"Easy": 2.7, "Medium": 4.5, "Hard": 6.4}
         self.win_score = 5
@@ -37,9 +38,10 @@ class PongGame:
         return max(low, min(high, value))
 
     def reset_ball(self, direction):
-        self.ball_pos = [self.width / 2, self.height / 2]
-        speed_x = random.uniform(360, 430) * direction
-        speed_y = random.choice([-1, 1]) * random.uniform(180, 280)
+        center_y = self.header_height + (self.height - self.header_height) / 2
+        self.ball_pos = [self.width / 2, center_y]
+        speed_x = random.uniform(250, 300) * direction
+        speed_y = random.choice([-1, 1]) * random.uniform(120, 180)
         self.ball_velocity = [speed_x, speed_y]
         self.ball.center = (int(self.ball_pos[0]), int(self.ball_pos[1]))
         self.trail = []
@@ -49,8 +51,9 @@ class PongGame:
             self.game_mode = mode
         self.player_score = 0
         self.cpu_score = 0
-        self.paddle.y = self.height // 2 - self.paddle.height // 2
-        self.cpu_paddle.y = self.height // 2 - self.cpu_paddle.height // 2
+        center_y = self.header_height + (self.height - self.header_height) / 2
+        self.paddle.y = int(center_y - self.paddle.height // 2)
+        self.cpu_paddle.y = int(center_y - self.cpu_paddle.height // 2)
         self.reset_ball(random.choice([-1, 1]))
 
     def set_difficulty(self, difficulty):
@@ -88,15 +91,15 @@ class PongGame:
             if keys[pygame.K_DOWN]:
                 self.cpu_paddle.y += self.paddle_speed * dt
 
-        self.paddle.y = self.clamp(self.paddle.y, 0, self.height - self.paddle.height)
-        self.cpu_paddle.y = self.clamp(self.cpu_paddle.y, 0, self.height - self.cpu_paddle.height)
+        self.paddle.y = self.clamp(self.paddle.y, self.header_height + 10, self.height - self.paddle.height)
+        self.cpu_paddle.y = self.clamp(self.cpu_paddle.y, self.header_height + 10, self.height - self.cpu_paddle.height)
 
         self.ball_pos[0] += self.ball_velocity[0] * dt
         self.ball_pos[1] += self.ball_velocity[1] * dt
         self.ball.center = (int(self.ball_pos[0]), int(self.ball_pos[1]))
 
-        if self.ball.top <= 0:
-            self.ball.top = 0
+        if self.ball.top <= self.header_height:
+            self.ball.top = self.header_height
             self.ball_pos[1] = self.ball.centery
             self.ball_velocity[1] = abs(self.ball_velocity[1])
         elif self.ball.bottom >= self.height:
@@ -127,19 +130,20 @@ class PongGame:
         return None
 
     def draw(self, screen, offset_x=0, offset_y=0):
+        screen.fill((241, 246, 255))
+        pygame.draw.rect(screen, (228, 237, 255), pygame.Rect(0, 0, self.width, self.header_height))
+        pygame.draw.line(screen, (201, 216, 247), (0, self.header_height), (self.width, self.header_height), 2)
         pygame.draw.line(screen, self.colors["divider"], (self.width // 2, 0), (self.width // 2, self.height), 2)
         pygame.draw.rect(screen, self.colors["player"], self.paddle.move(offset_x, offset_y))
         pygame.draw.rect(screen, self.colors["cpu"], self.cpu_paddle.move(offset_x, offset_y))
-        ball_rect = self.ball.move(offset_x, offset_y)
-        ball_center = ball_rect.center
-        pygame.draw.circle(screen, self.colors["ball_glow"], ball_center, 12)
-        pygame.draw.circle(screen, self.colors["ball_outline"], ball_center, 9)
-        pygame.draw.circle(screen, self.colors["ball"], ball_center, 6)
 
         for index, pos in enumerate(self.trail):
             radius = max(2, 6 - (len(self.trail) - index) // 2)
             color = (145 + index * 8, 188 + index * 4, 255)
             pygame.draw.circle(screen, color, pos, radius)
+
+        ball_rect = self.ball.move(offset_x, offset_y)
+        pygame.draw.circle(screen, (24, 38, 74), ball_rect.center, 8)
 
         screen.blit(self.font.render(str(self.player_score), True, self.colors["player"]), (self.width // 2 - 110, 20))
         screen.blit(self.font.render(str(self.cpu_score), True, self.colors["cpu"]), (self.width // 2 + 70, 20))

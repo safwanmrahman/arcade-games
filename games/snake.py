@@ -12,9 +12,11 @@ class SnakeGame:
         self.font = font
         self.colors = colors
         self.spawn_particles = spawn_particles
+        self.header_height = 72
         self.grid_size = 20
         self.grid_width = width // self.grid_size
-        self.grid_height = height // self.grid_size
+        self.play_top = 80
+        self.grid_height = (height - self.play_top) // self.grid_size
         self.snake = []
         self.previous_snake = []
         self.direction = (1, 0)
@@ -95,7 +97,7 @@ class SnakeGame:
                 self.food = self.random_open_cell()
                 self.spawn_particles(
                     next_head[0] * self.grid_size + self.grid_size // 2,
-                    next_head[1] * self.grid_size + self.grid_size // 2,
+                    self.play_top + next_head[1] * self.grid_size + self.grid_size // 2,
                     self.colors["accent"],
                 )
             else:
@@ -103,14 +105,17 @@ class SnakeGame:
         return None
 
     def draw(self, screen):
+        screen.fill((241, 251, 246))
+        pygame.draw.rect(screen, (224, 244, 234), pygame.Rect(0, 0, self.width, self.header_height))
+        pygame.draw.line(screen, (196, 229, 210), (0, self.header_height), (self.width, self.header_height), 2)
         for x in range(0, self.width, self.grid_size):
-            pygame.draw.line(screen, (203, 228, 255), (x, 0), (x, self.height))
-        for y in range(0, self.height, self.grid_size):
-            pygame.draw.line(screen, (203, 228, 255), (0, y), (self.width, y))
+            pygame.draw.line(screen, (206, 232, 218), (x, self.play_top), (x, self.height))
+        for y in range(self.play_top, self.height, self.grid_size):
+            pygame.draw.line(screen, (206, 232, 218), (0, y), (self.width, y))
 
         food_rect = pygame.Rect(
             self.food[0] * self.grid_size,
-            self.food[1] * self.grid_size,
+            self.play_top + self.food[1] * self.grid_size,
             self.grid_size,
             self.grid_size,
         )
@@ -127,7 +132,7 @@ class SnakeGame:
             draw_y = previous_segment[1] + (segment[1] - previous_segment[1]) * progress
             rect = pygame.Rect(
                 int(draw_x * self.grid_size),
-                int(draw_y * self.grid_size),
+                self.play_top + int(draw_y * self.grid_size),
                 self.grid_size,
                 self.grid_size,
             ).inflate(-3, -3)
@@ -135,4 +140,4 @@ class SnakeGame:
             pygame.draw.rect(screen, color, rect, border_radius=5)
 
         screen.blit(self.font.render(f"Snake Score: {self.score}", True, self.colors["ink"]), (20, 18))
-        screen.blit(self.font.render(self.speed_label, True, self.colors["accent_dark"]), (self.width - 150, 18))
+        screen.blit(self.font.render(self.speed_label, True, self.colors["accent_dark"]), (self.width - 140, 18))

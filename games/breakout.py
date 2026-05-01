@@ -14,6 +14,7 @@ class BreakoutGame:
         self.colors = colors
         self.brick_colors = brick_colors
         self.spawn_particles = spawn_particles
+        self.header_height = 72
         self.paddle = pygame.Rect(width // 2 - 60, height - 45, 120, 14)
         self.ball = pygame.Rect(0, 0, 14, 14)
         self.ball_pos = [width / 2, height - 70]
@@ -32,7 +33,7 @@ class BreakoutGame:
         rows = 5
         cols = 10
         margin_x = 56
-        top = 70
+        top = self.header_height + 20
         gap = 8
         brick_width = 62
         brick_height = 22
@@ -98,8 +99,8 @@ class BreakoutGame:
             self.ball_pos[0] = self.ball.centerx
             self.ball_velocity[0] = -abs(self.ball_velocity[0])
 
-        if self.ball.top <= 0:
-            self.ball.top = 0
+        if self.ball.top <= self.header_height:
+            self.ball.top = self.header_height
             self.ball_pos[1] = self.ball.centery
             self.ball_velocity[1] = abs(self.ball_velocity[1])
 
@@ -139,11 +140,26 @@ class BreakoutGame:
         return None
 
     def draw(self, screen):
+        screen.fill((255, 247, 239))
+        pygame.draw.rect(screen, (255, 236, 218), pygame.Rect(0, 0, self.width, self.header_height))
+        pygame.draw.line(screen, (247, 212, 183), (0, self.header_height), (self.width, self.header_height), 2)
         for brick in self.bricks:
             pygame.draw.rect(screen, brick["color"], brick["rect"], border_radius=6)
         pygame.draw.rect(screen, self.colors["player"], self.paddle, border_radius=7)
-        pygame.draw.circle(screen, self.colors["ball_glow"], self.ball.center, 12)
-        pygame.draw.circle(screen, self.colors["ball_outline"], self.ball.center, 9)
-        pygame.draw.circle(screen, self.colors["ball"], self.ball.center, 6)
+        pygame.draw.circle(screen, self.colors["ink"], self.ball.center, 7)
         screen.blit(self.font.render(f"Score: {self.score}", True, self.colors["ink"]), (20, 18))
-        screen.blit(self.font.render(f"Lives: {self.lives}", True, self.colors["ink"]), (650, 18))
+        heart_color = (255, 96, 132)
+        heart_center_x = 668
+        heart_center_y = 31
+        pygame.draw.circle(screen, heart_color, (heart_center_x - 6, heart_center_y - 4), 6)
+        pygame.draw.circle(screen, heart_color, (heart_center_x + 6, heart_center_y - 4), 6)
+        pygame.draw.polygon(
+            screen,
+            heart_color,
+            [
+                (heart_center_x - 14, heart_center_y - 1),
+                (heart_center_x + 14, heart_center_y - 1),
+                (heart_center_x, heart_center_y + 16),
+            ],
+        )
+        screen.blit(self.font.render(f"Lives: {self.lives}", True, self.colors["ink"]), (688, 18))
