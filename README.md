@@ -10,9 +10,9 @@ Currently implemented:
 - Pong
 - Snake
 - Breakout
+- Sudoku
 
 Planned:
-- Sudoku
 - Space Invaders
 - Flappy Bird
 - Additional arcade-style games
@@ -23,6 +23,7 @@ Planned:
 - Pong with adjustable CPU difficulty and local versus mode
 - Snake with grid-based movement and score tracking
 - Breakout with lives, brick collision, and paddle angle control
+- Sudoku with a regular 9x9 board and selectable difficulty
 - Time-based movement using delta time for smooth gameplay
 - Accurate collision detection and response
 
@@ -42,11 +43,13 @@ Planned:
 
 | Key | Action |
 |-----|--------|
-| 1 / 2 / 3 | Choose Pong / Snake / Breakout from the main menu |
+| 1 / 2 / 3 / 4 | Choose Pong / Snake / Breakout / Sudoku from the main menu |
 | 1 / 2 / 3 / 4 | Choose an option on the setup screen |
 | W / S | Move left paddle |
 | Up / Down | Move right paddle |
 | Arrow Keys / WASD | Control Snake or Breakout |
+| Mouse / Arrow Keys | Select Sudoku cells |
+| 1-9 / Backspace | Fill or clear Sudoku cells |
 | P | Pause / Resume |
 | ESC | Go back / Exit menu |
 | Q | Quit game |
@@ -59,7 +62,8 @@ arcade-games/
 │   ├── __init__.py
 │   ├── breakout.py
 │   ├── pong.py
-│   └── snake.py
+│   ├── snake.py
+│   └── sudoku.py
 ├── .gitignore
 ├── LICENSE
 ├── README.md
@@ -84,6 +88,11 @@ Breakout includes:
 - Brick field destruction and score tracking
 - Paddle-controlled bounce angles
 - Life system with round resets
+
+Sudoku includes:
+- A standard 9x9 board
+- Easy, Medium, and Hard puzzle generation
+- Mouse or keyboard cell selection with number entry
 
 ## Installation
 

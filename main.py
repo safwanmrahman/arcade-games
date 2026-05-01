@@ -3,11 +3,11 @@ import sys
 
 import pygame
 
-from games import BreakoutGame, PongGame, SnakeGame
+from games import BreakoutGame, PongGame, SnakeGame, SudokuGame
 
 pygame.init()
 
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 1100, 860
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Arcade Games")
 clock = pygame.time.Clock()
@@ -76,6 +76,15 @@ SETUP_OPTIONS = {
             ("3", "Rush", "Fewer lives, smaller paddle, faster ball"),
         ],
     },
+    "sudoku": {
+        "title": "Sudoku Setup",
+        "subtitle": "Classic 9x9 board, three puzzle styles",
+        "options": [
+            ("1", "Easy", "More starting clues for a gentler solve"),
+            ("2", "Medium", "Balanced clue count and deduction"),
+            ("3", "Hard", "Fewer clues and tougher logic chains"),
+        ],
+    },
 }
 
 
@@ -100,7 +109,8 @@ def update_particles(dt):
 pong = PongGame(WIDTH, HEIGHT, font, small_font, COLORS, spawn_particles)
 snake = SnakeGame(WIDTH, HEIGHT, font, COLORS, spawn_particles)
 breakout = BreakoutGame(WIDTH, HEIGHT, font, COLORS, BRICK_COLORS, spawn_particles)
-games = {"pong": pong, "snake": snake, "breakout": breakout}
+sudoku = SudokuGame(WIDTH, HEIGHT, font, small_font, COLORS, spawn_particles)
+games = {"pong": pong, "snake": snake, "breakout": breakout, "sudoku": sudoku}
 
 
 def center_text(text, text_font, color, y):
@@ -207,6 +217,16 @@ def apply_setup_choice(choice):
         elif choice == pygame.K_3:
             breakout.set_preset("Rush")
             start_game("breakout")
+    elif selected_setup == "sudoku":
+        if choice == pygame.K_1:
+            sudoku.set_preset("Easy")
+            start_game("sudoku")
+        elif choice == pygame.K_2:
+            sudoku.set_preset("Medium")
+            start_game("sudoku")
+        elif choice == pygame.K_3:
+            sudoku.set_preset("Hard")
+            start_game("sudoku")
 
 
 def draw_home_card(x, y, width, height, accent, number, title, body):
@@ -219,19 +239,27 @@ def draw_home_card(x, y, width, height, accent, number, title, body):
     screen.blit(num_surface, num_surface.get_rect(center=bubble.center))
     title_surface = font.render(title, True, COLORS["ink"])
     screen.blit(title_surface, (x + 18, y + 76))
-    draw_wrapped_text(body, tiny_font, COLORS["ink_soft"], x + 18, y + 122, width - 36, 22)
+    draw_wrapped_text(body, tiny_font, COLORS["ink_soft"], x + 18, y + 120, width - 36, 20)
 
 
 def draw_menu():
     center_text("Arcade Daydream", title_font, COLORS["ink"], 118)
     center_text("Pick a game, then tune it on the next screen.", small_font, COLORS["ink_soft"], 170)
 
-    draw_home_card(70, 225, 200, 170, COLORS["player"], "1", "Pong", "Snappy rallies and versus play")
-    draw_home_card(300, 225, 200, 170, COLORS["accent"], "2", "Snake", "Choose a pace and chase score")
-    draw_home_card(530, 225, 200, 170, COLORS["cpu"], "3", "Breakout", "Colorful bricks and paddle angles")
+    card_width = 300
+    card_height = 175
+    card_gap = 60
+    total_width = card_width * 2 + card_gap
+    left_x = (WIDTH - total_width) // 2
+    right_x = left_x + card_width + card_gap
 
-    center_text("Press 1, 2, or 3", font, COLORS["ink"], 455)
-    center_text("Q quits from anywhere", small_font, COLORS["ink_soft"], 500)
+    draw_home_card(left_x, 220, card_width, card_height, COLORS["player"], "1", "Pong", "Snappy rallies and versus play")
+    draw_home_card(right_x, 220, card_width, card_height, COLORS["accent"], "2", "Snake", "Choose a pace and chase score")
+    draw_home_card(left_x, 420, card_width, card_height, COLORS["cpu"], "3", "Breakout", "Colorful bricks and paddle angles")
+    draw_home_card(right_x, 420, card_width, card_height, COLORS["lavender"], "4", "Sudoku", "Classic 9x9 logic board")
+
+    center_text("Press 1, 2, 3, or 4", font, COLORS["ink"], 662)
+    center_text("Q quits from anywhere", small_font, COLORS["ink_soft"], 696)
 
 
 def draw_setup():
@@ -239,9 +267,11 @@ def draw_setup():
     center_text(config["title"], big_font, COLORS["ink"], 118)
     center_text(config["subtitle"], small_font, COLORS["ink_soft"], 164)
 
+    card_width = 760
+    card_x = (WIDTH - card_width) // 2
     card_y = 198
     for index, (key_label, title, description) in enumerate(config["options"]):
-        rect = pygame.Rect(110, card_y + index * 84, 580, 64)
+        rect = pygame.Rect(card_x, card_y + index * 84, card_width, 64)
         border = [COLORS["player"], COLORS["accent"], COLORS["cpu"], COLORS["lavender"]][index % 4]
         pygame.draw.rect(screen, COLORS["panel_soft"], rect, border_radius=22)
         pygame.draw.rect(screen, border, rect, 3, border_radius=22)
@@ -250,9 +280,9 @@ def draw_setup():
         title_surface = font.render(title, True, COLORS["ink"])
         desc_surface = small_font.render(description, True, COLORS["ink_soft"])
 
-        screen.blit(key_surface, (132, rect.y + 13))
-        screen.blit(title_surface, (190, rect.y + 7))
-        screen.blit(desc_surface, (190, rect.y + 35))
+        screen.blit(key_surface, (rect.x + 22, rect.y + 13))
+        screen.blit(title_surface, (rect.x + 120, rect.y + 7))
+        screen.blit(desc_surface, (rect.x + 120, rect.y + 35))
 
     center_text("ESC returns to the game picker", small_font, COLORS["ink_soft"], 552)
 
@@ -302,6 +332,8 @@ while running:
                     open_setup("snake")
                 elif event.key == pygame.K_3:
                     open_setup("breakout")
+                elif event.key == pygame.K_4:
+                    open_setup("sudoku")
                 continue
 
             if state == "setup":
@@ -321,6 +353,14 @@ while running:
 
             if state == "play" and active_game == "snake":
                 snake.handle_keydown(event.key)
+            elif state == "play" and active_game == "sudoku":
+                message = sudoku.handle_keydown(event.key, event.unicode)
+                if message:
+                    set_game_over(message)
+
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if state == "play" and active_game == "sudoku":
+                sudoku.handle_mouse(event.pos)
 
     if state == "play":
         keys = pygame.key.get_pressed()
@@ -328,8 +368,10 @@ while running:
             message = pong.update(dt, keys)
         elif active_game == "snake":
             message = snake.update(dt)
-        else:
+        elif active_game == "breakout":
             message = breakout.update(dt, keys)
+        else:
+            message = sudoku.update(dt)
         if message:
             set_game_over(message)
 
@@ -353,15 +395,19 @@ while running:
             pong.draw(screen, offset_x, offset_y)
         elif active_game == "snake":
             snake.draw(screen)
-        else:
+        elif active_game == "breakout":
             breakout.draw(screen)
+        else:
+            sudoku.draw(screen)
     elif state == "pause":
         if active_game == "pong":
             pong.draw(screen)
         elif active_game == "snake":
             snake.draw(screen)
-        else:
+        elif active_game == "breakout":
             breakout.draw(screen)
+        else:
+            sudoku.draw(screen)
         draw_pause()
     elif state == "game_over":
         draw_game_over()
