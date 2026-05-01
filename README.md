@@ -12,6 +12,9 @@ Currently implemented:
 Planned:
 - Snake
 - Breakout
+- Sudoku
+- Space Invaders
+- Flappy Bird
 - Additional arcade-style games
 
 ## Features
