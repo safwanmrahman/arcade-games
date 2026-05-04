@@ -148,6 +148,11 @@ def center_text(text, text_font, color, y):
     screen.blit(surface, rect)
 
 
+def center_text_in_rect(text, text_font, color, rect):
+    surface = text_font.render(text, True, color)
+    screen.blit(surface, surface.get_rect(center=rect.center))
+
+
 def draw_wrapped_text(text, text_font, color, x, y, max_width, line_gap):
     words = text.split()
     lines = []
@@ -251,8 +256,8 @@ def draw_home_card(x, y, width, height, accent, number, title, body):
     num_surface = small_font.render(number, True, COLORS["panel"])
     screen.blit(num_surface, num_surface.get_rect(center=bubble.center))
     title_surface = font.render(title, True, COLORS["ink"])
-    screen.blit(title_surface, (x + 18, y + 76))
-    draw_wrapped_text(body, tiny_font, COLORS["ink_soft"], x + 18, y + 120, width - 36, 20)
+    screen.blit(title_surface, (x + 18, y + 68))
+    draw_wrapped_text(body, tiny_font, COLORS["ink_soft"], x + 18, y + 108, width - 36, 18)
 
 
 def draw_menu():
@@ -260,12 +265,12 @@ def draw_menu():
     center_text("Pick a game, then tune it on the next screen.", small_font, COLORS["ink_soft"], 170)
 
     card_width = 300
-    card_height = 175
+    card_height = 150
     col_gap = 60
-    row_gap = 28
+    row_gap = 24
     total_width = card_width * 2 + col_gap
     start_x = (WIDTH - total_width) // 2
-    start_y = 220
+    start_y = 210
     positions = [
         (start_x, start_y),
         (start_x + card_width + col_gap, start_y),
@@ -279,8 +284,9 @@ def draw_menu():
         x, y = positions[index]
         draw_home_card(x, y, card_width, card_height, config["accent"], str(index + 1), config["title"], config["body"])
 
-    center_text("Press 1, 2, 3, 4, or 5", font, COLORS["ink"], 792)
-    center_text("Q quits from anywhere", small_font, COLORS["ink_soft"], 826)
+    footer_y = positions[-1][1] + card_height + 52
+    center_text("Press 1, 2, 3, 4, or 5", font, COLORS["ink"], footer_y)
+    center_text("Q quits from anywhere", small_font, COLORS["ink_soft"], footer_y + 32)
 
 
 def draw_setup():
@@ -309,12 +315,22 @@ def draw_setup():
 
 
 def draw_pause():
-    overlay = pygame.Rect(180, 188, 440, 180)
-    pygame.draw.rect(screen, (255, 255, 255), overlay, border_radius=26)
-    pygame.draw.rect(screen, COLORS["panel_border"], overlay, 3, border_radius=26)
-    center_text("Paused", big_font, COLORS["ink"], 250)
-    center_text("P resumes", font, COLORS["ink"], 304)
-    center_text("ESC returns to the menu", small_font, COLORS["ink_soft"], 344)
+    veil = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    veil.fill((255, 255, 255, 125))
+    screen.blit(veil, (0, 0))
+
+    overlay = pygame.Rect(WIDTH // 2 - 250, HEIGHT // 2 - 120, 500, 240)
+    shadow = overlay.move(0, 12)
+    pygame.draw.rect(screen, (203, 217, 241), shadow, border_radius=30)
+    pygame.draw.rect(screen, (255, 255, 255), overlay, border_radius=30)
+    pygame.draw.rect(screen, COLORS["panel_border"], overlay, 3, border_radius=30)
+
+    title_rect = pygame.Rect(overlay.x, overlay.y + 40, overlay.width, 58)
+    resume_rect = pygame.Rect(overlay.x, overlay.y + 118, overlay.width, 40)
+    detail_rect = pygame.Rect(overlay.x, overlay.y + 172, overlay.width, 28)
+    center_text_in_rect("Paused", big_font, COLORS["ink"], title_rect)
+    center_text_in_rect("P resumes", font, COLORS["ink"], resume_rect)
+    center_text_in_rect("ESC returns to the menu", small_font, COLORS["ink_soft"], detail_rect)
 
 
 def draw_game_over():

@@ -23,8 +23,8 @@ Planned:
 - Pong with adjustable CPU difficulty and local versus mode
 - Snake with grid-based movement and score tracking
 - Breakout with lives, brick collision, and paddle angle control
-- Sudoku with a regular 9x9 board and selectable difficulty
-- Space Invaders with wave clearing, return fire, and difficulty presets
+- Sudoku with selectable difficulty, notes, hints, auto-check feedback, and full-solution reveal
+- Space Invaders with expanding waves, larger shots, friendlier counterfire, and difficulty presets
 - Time-based movement using delta time for smooth gameplay
 - Accurate collision detection and response
 
@@ -52,6 +52,7 @@ Planned:
 | Space | Fire in Space Invaders |
 | Mouse / Arrow Keys | Select Sudoku cells |
 | 1-9 / Backspace | Fill or clear Sudoku cells |
+| A / N / H / S | Toggle Sudoku auto-check, notes, hint, or reveal the full solution |
 | P | Pause / Resume |
 | ESC | Go back / Exit menu |
 | Q | Quit game |
@@ -73,15 +74,13 @@ arcade-games/
 └── main.py
 ```
 
-## Pong Details
+## Game Details
 
-The Pong implementation includes:
+Pong includes:
 - Difficulty levels (Easy, Medium, Hard)
 - CPU paddle with adjustable tracking behavior
 - Real-time score tracking and win condition
 - Pause and settings menus accessible during gameplay
-
-## Other Games
 
 Snake includes:
 - Grid-based movement with food spawning
@@ -96,11 +95,12 @@ Sudoku includes:
 - A standard 9x9 board
 - Easy, Medium, and Hard puzzle generation
 - Mouse or keyboard cell selection with number entry
+- Auto-check, notes mode, hint support, full-solution reveal, and mistake tracking
 
 Space Invaders includes:
 - Three difficulty presets
-- Player shooting and enemy return fire
-- Multi-row alien wave with score and lives
+- Hold-to-fire shooting and enemy return fire
+- Multi-wave formations with wider spacing and easier bullet interception
 
 ## Installation
 

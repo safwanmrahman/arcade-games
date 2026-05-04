@@ -56,6 +56,49 @@ class SudokuTests(unittest.TestCase):
             self.assertEqual(game.board[row][col], game.solution[row][col])
             self.assertNotEqual(game.board[row][col], 0)
 
+    def test_notes_mode_toggles_candidate_in_selected_cell(self):
+        game = SudokuGame(1100, 860, None, None, COLORS, stub_particles)
+        row, col = game.selected
+
+        game.handle_keydown(pygame.K_n, "")
+        game.handle_keydown(pygame.K_4, "4")
+
+        self.assertIn((row, col), game.notes)
+        self.assertIn(4, game.notes[(row, col)])
+
+    def test_wrong_value_counts_mistake_when_auto_check_is_on(self):
+        game = SudokuGame(1100, 860, None, None, COLORS, stub_particles)
+        row, col = game.selected
+        wrong_value = next(value for value in range(1, 10) if value != game.solution[row][col])
+
+        game.handle_keydown(getattr(pygame, f"K_{wrong_value}"), str(wrong_value))
+
+        self.assertEqual(game.board[row][col], wrong_value)
+        self.assertEqual(game.mistakes, 1)
+
+    def test_hint_reveals_correct_value(self):
+        game = SudokuGame(1100, 860, None, None, COLORS, stub_particles)
+        row, col = game.selected
+
+        game.reveal_hint()
+
+        self.assertEqual(game.board[row][col], game.solution[row][col])
+
+    def test_empty_unicode_does_not_crash(self):
+        game = SudokuGame(1100, 860, None, None, COLORS, stub_particles)
+
+        message = game.handle_keydown(pygame.K_LSHIFT, "")
+
+        self.assertIsNone(message)
+
+    def test_reveal_solution_fills_board_and_returns_message(self):
+        game = SudokuGame(1100, 860, None, None, COLORS, stub_particles)
+
+        message = game.reveal_solution()
+
+        self.assertEqual(game.board, game.solution)
+        self.assertEqual(message, f"Solution shown for {game.preset} Sudoku")
+
 
 class SnakeTests(unittest.TestCase):
     def test_snake_grows_and_scores_after_eating(self):
@@ -111,25 +154,48 @@ class SpaceInvadersTests(unittest.TestCase):
     def test_player_bullet_removes_alien_and_scores(self):
         game = SpaceInvadersGame(1100, 860, None, None, COLORS, stub_particles)
         alien = game.aliens[0]["rect"]
-        bullet = pygame.Rect(alien.centerx - 2, alien.centery - 8, 5, 16)
+        bullet = pygame.Rect(alien.centerx - 4, alien.centery - 14, 10, 28)
         game.bullets = [bullet]
 
         message = game.update(0, FakeKeys())
 
         self.assertIsNone(message)
         self.assertEqual(game.score, 25)
-        self.assertEqual(len(game.aliens), 31)
+        self.assertEqual(len(game.aliens), 17)
 
     def test_enemy_bullet_can_end_run(self):
         game = SpaceInvadersGame(1100, 860, None, None, COLORS, stub_particles)
         game.lives = 1
-        bullet = pygame.Rect(0, 0, 5, 14)
+        bullet = pygame.Rect(0, 0, 8, 24)
         bullet.center = game.player.center
         game.enemy_bullets = [bullet]
 
         message = game.update(0, FakeKeys())
 
         self.assertEqual(message, "Invaders broke through at 0 points")
+
+    def test_wave_clear_rebuilds_invaders_and_awards_bonus(self):
+        game = SpaceInvadersGame(1100, 860, None, None, COLORS, stub_particles)
+        game.aliens = []
+
+        message = game.update(0, FakeKeys())
+
+        self.assertIsNone(message)
+        self.assertEqual(game.wave, 2)
+        self.assertEqual(len(game.aliens), 18)
+        self.assertEqual(game.score, 100)
+
+    def test_player_bullet_can_cancel_enemy_bullet_with_generous_window(self):
+        game = SpaceInvadersGame(1100, 860, None, None, COLORS, stub_particles)
+        player_bullet = pygame.Rect(300, 400, 14, 34)
+        enemy_bullet = pygame.Rect(316, 392, 8, 24)
+        game.bullets = [player_bullet]
+        game.enemy_bullets = [enemy_bullet]
+
+        game.update(0, FakeKeys())
+
+        self.assertEqual(game.bullets, [])
+        self.assertEqual(game.enemy_bullets, [])
 
 
 if __name__ == "__main__":
