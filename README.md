@@ -76,6 +76,11 @@ arcade-games/
 
 ## Game Details
 
+Breakout includes:
+- Brick field destruction and score tracking
+- Paddle-controlled bounce angles
+- Life system with round resets
+
 Pong includes:
 - Difficulty levels (Easy, Medium, Hard)
 - CPU paddle with adjustable tracking behavior
@@ -85,11 +90,6 @@ Pong includes:
 Snake includes:
 - Grid-based movement with food spawning
 - Score tracking and collision-based game over
-
-Breakout includes:
-- Brick field destruction and score tracking
-- Paddle-controlled bounce angles
-- Life system with round resets
 
 Sudoku includes:
 - A standard 9x9 board
