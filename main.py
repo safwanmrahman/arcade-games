@@ -3,7 +3,7 @@ import sys
 
 import pygame
 
-from games import BreakoutGame, PongGame, SnakeGame, SudokuGame
+from games import BreakoutGame, PongGame, SnakeGame, SpaceInvadersGame, SudokuGame
 
 pygame.init()
 
@@ -39,18 +39,16 @@ COLORS = {
     "lavender": (215, 205, 255),
 }
 BRICK_COLORS = [(255, 126, 163), (255, 174, 89), (255, 214, 102), (106, 214, 173)]
+CARD_COLORS = [COLORS["player"], COLORS["accent"], COLORS["cpu"], COLORS["lavender"], COLORS["divider"]]
+MENU_KEYS = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5]
 
-state = "menu"
-active_game = "pong"
-game_over_message = ""
-selected_setup = "pong"
-particles = []
-shake_timer = 0.0
-
-SETUP_OPTIONS = {
+GAME_DEFS = {
     "pong": {
-        "title": "Pong Setup",
-        "subtitle": "Pick your match style",
+        "title": "Pong",
+        "body": "Snappy rallies and versus play",
+        "accent": COLORS["player"],
+        "setup_title": "Pong Setup",
+        "setup_subtitle": "Pick your match style",
         "options": [
             ("1", "Easy CPU", "Relaxed rallies, slower tracking"),
             ("2", "Medium CPU", "Balanced back-and-forth"),
@@ -59,8 +57,11 @@ SETUP_OPTIONS = {
         ],
     },
     "snake": {
-        "title": "Snake Setup",
-        "subtitle": "Choose the pace",
+        "title": "Snake",
+        "body": "Choose a pace and chase score",
+        "accent": COLORS["accent"],
+        "setup_title": "Snake Setup",
+        "setup_subtitle": "Choose the pace",
         "options": [
             ("1", "Chill", "More breathing room between turns"),
             ("2", "Classic", "Arcade baseline speed"),
@@ -68,8 +69,11 @@ SETUP_OPTIONS = {
         ],
     },
     "breakout": {
-        "title": "Breakout Setup",
-        "subtitle": "Choose the challenge",
+        "title": "Breakout",
+        "body": "Colorful bricks and paddle angles",
+        "accent": COLORS["cpu"],
+        "setup_title": "Breakout Setup",
+        "setup_subtitle": "Choose the challenge",
         "options": [
             ("1", "Zen", "More lives and a wider paddle"),
             ("2", "Classic", "Standard balance"),
@@ -77,15 +81,38 @@ SETUP_OPTIONS = {
         ],
     },
     "sudoku": {
-        "title": "Sudoku Setup",
-        "subtitle": "Classic 9x9 board, three puzzle styles",
+        "title": "Sudoku",
+        "body": "Classic 9x9 logic board",
+        "accent": COLORS["lavender"],
+        "setup_title": "Sudoku Setup",
+        "setup_subtitle": "Classic 9x9 board, three puzzle styles",
         "options": [
             ("1", "Easy", "More starting clues for a gentler solve"),
             ("2", "Medium", "Balanced clue count and deduction"),
             ("3", "Hard", "Fewer clues and tougher logic chains"),
         ],
     },
+    "space_invaders": {
+        "title": "Space Invaders",
+        "body": "Clear the wave and dodge return fire",
+        "accent": COLORS["divider"],
+        "setup_title": "Invaders Setup",
+        "setup_subtitle": "Tune the incoming wave",
+        "options": [
+            ("1", "Cadet", "More lives and slower enemy volleys"),
+            ("2", "Arcade", "Classic pace and pressure"),
+            ("3", "Elite", "Sharper waves and faster return fire"),
+        ],
+    },
 }
+GAME_ORDER = list(GAME_DEFS)
+
+state = "menu"
+active_game = "pong"
+game_over_message = ""
+selected_setup = "pong"
+particles = []
+shake_timer = 0.0
 
 
 def spawn_particles(x, y, color):
@@ -106,11 +133,13 @@ def update_particles(dt):
             particles.remove(particle)
 
 
-pong = PongGame(WIDTH, HEIGHT, font, small_font, COLORS, spawn_particles)
-snake = SnakeGame(WIDTH, HEIGHT, font, COLORS, spawn_particles)
-breakout = BreakoutGame(WIDTH, HEIGHT, font, COLORS, BRICK_COLORS, spawn_particles)
-sudoku = SudokuGame(WIDTH, HEIGHT, font, small_font, COLORS, spawn_particles)
-games = {"pong": pong, "snake": snake, "breakout": breakout, "sudoku": sudoku}
+games = {
+    "pong": PongGame(WIDTH, HEIGHT, font, small_font, COLORS, spawn_particles),
+    "snake": SnakeGame(WIDTH, HEIGHT, font, COLORS, spawn_particles),
+    "breakout": BreakoutGame(WIDTH, HEIGHT, font, COLORS, BRICK_COLORS, spawn_particles),
+    "sudoku": SudokuGame(WIDTH, HEIGHT, font, small_font, COLORS, spawn_particles),
+    "space_invaders": SpaceInvadersGame(WIDTH, HEIGHT, font, small_font, COLORS, spawn_particles),
+}
 
 
 def center_text(text, text_font, color, y):
@@ -180,53 +209,37 @@ def open_setup(game_name):
     state = "setup"
 
 
+def option_index_from_key(key, options):
+    option_keys = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4]
+    for index, option_key in enumerate(option_keys[: len(options)]):
+        if key == option_key:
+            return index
+    return None
+
+
 def apply_setup_choice(choice):
+    index = option_index_from_key(choice, GAME_DEFS[selected_setup]["options"])
+    if index is None:
+        return
+
     if selected_setup == "pong":
-        if choice == pygame.K_1:
-            pong.set_difficulty("Easy")
+        pong = games["pong"]
+        if index < 3:
+            pong.set_difficulty(["Easy", "Medium", "Hard"][index])
             pong.reset("cpu")
-            start_game("pong")
-        elif choice == pygame.K_2:
-            pong.set_difficulty("Medium")
-            pong.reset("cpu")
-            start_game("pong")
-        elif choice == pygame.K_3:
-            pong.set_difficulty("Hard")
-            pong.reset("cpu")
-            start_game("pong")
-        elif choice == pygame.K_4:
+        else:
             pong.reset("player")
-            start_game("pong")
-    elif selected_setup == "snake":
-        if choice == pygame.K_1:
-            snake.set_preset("Chill")
-            start_game("snake")
-        elif choice == pygame.K_2:
-            snake.set_preset("Classic")
-            start_game("snake")
-        elif choice == pygame.K_3:
-            snake.set_preset("Turbo")
-            start_game("snake")
-    elif selected_setup == "breakout":
-        if choice == pygame.K_1:
-            breakout.set_preset("Zen")
-            start_game("breakout")
-        elif choice == pygame.K_2:
-            breakout.set_preset("Classic")
-            start_game("breakout")
-        elif choice == pygame.K_3:
-            breakout.set_preset("Rush")
-            start_game("breakout")
-    elif selected_setup == "sudoku":
-        if choice == pygame.K_1:
-            sudoku.set_preset("Easy")
-            start_game("sudoku")
-        elif choice == pygame.K_2:
-            sudoku.set_preset("Medium")
-            start_game("sudoku")
-        elif choice == pygame.K_3:
-            sudoku.set_preset("Hard")
-            start_game("sudoku")
+        start_game("pong")
+        return
+
+    preset_lookup = {
+        "snake": ["Chill", "Classic", "Turbo"],
+        "breakout": ["Zen", "Classic", "Rush"],
+        "sudoku": ["Easy", "Medium", "Hard"],
+        "space_invaders": ["Cadet", "Arcade", "Elite"],
+    }
+    games[selected_setup].set_preset(preset_lookup[selected_setup][index])
+    start_game(selected_setup)
 
 
 def draw_home_card(x, y, width, height, accent, number, title, body):
@@ -248,35 +261,43 @@ def draw_menu():
 
     card_width = 300
     card_height = 175
-    card_gap = 60
-    total_width = card_width * 2 + card_gap
-    left_x = (WIDTH - total_width) // 2
-    right_x = left_x + card_width + card_gap
+    col_gap = 60
+    row_gap = 28
+    total_width = card_width * 2 + col_gap
+    start_x = (WIDTH - total_width) // 2
+    start_y = 220
+    positions = [
+        (start_x, start_y),
+        (start_x + card_width + col_gap, start_y),
+        (start_x, start_y + card_height + row_gap),
+        (start_x + card_width + col_gap, start_y + card_height + row_gap),
+        (WIDTH // 2 - card_width // 2, start_y + (card_height + row_gap) * 2),
+    ]
 
-    draw_home_card(left_x, 220, card_width, card_height, COLORS["player"], "1", "Pong", "Snappy rallies and versus play")
-    draw_home_card(right_x, 220, card_width, card_height, COLORS["accent"], "2", "Snake", "Choose a pace and chase score")
-    draw_home_card(left_x, 420, card_width, card_height, COLORS["cpu"], "3", "Breakout", "Colorful bricks and paddle angles")
-    draw_home_card(right_x, 420, card_width, card_height, COLORS["lavender"], "4", "Sudoku", "Classic 9x9 logic board")
+    for index, game_name in enumerate(GAME_ORDER):
+        config = GAME_DEFS[game_name]
+        x, y = positions[index]
+        draw_home_card(x, y, card_width, card_height, config["accent"], str(index + 1), config["title"], config["body"])
 
-    center_text("Press 1, 2, 3, or 4", font, COLORS["ink"], 662)
-    center_text("Q quits from anywhere", small_font, COLORS["ink_soft"], 696)
+    center_text("Press 1, 2, 3, 4, or 5", font, COLORS["ink"], 792)
+    center_text("Q quits from anywhere", small_font, COLORS["ink_soft"], 826)
 
 
 def draw_setup():
-    config = SETUP_OPTIONS[selected_setup]
-    center_text(config["title"], big_font, COLORS["ink"], 118)
-    center_text(config["subtitle"], small_font, COLORS["ink_soft"], 164)
+    config = GAME_DEFS[selected_setup]
+    center_text(config["setup_title"], big_font, COLORS["ink"], 118)
+    center_text(config["setup_subtitle"], small_font, COLORS["ink_soft"], 164)
 
     card_width = 760
     card_x = (WIDTH - card_width) // 2
     card_y = 198
     for index, (key_label, title, description) in enumerate(config["options"]):
         rect = pygame.Rect(card_x, card_y + index * 84, card_width, 64)
-        border = [COLORS["player"], COLORS["accent"], COLORS["cpu"], COLORS["lavender"]][index % 4]
+        border = CARD_COLORS[index % len(CARD_COLORS)]
         pygame.draw.rect(screen, COLORS["panel_soft"], rect, border_radius=22)
         pygame.draw.rect(screen, border, rect, 3, border_radius=22)
 
-        key_surface = font.render(key_label, True, border if isinstance(border, tuple) else COLORS["ink"])
+        key_surface = font.render(key_label, True, border)
         title_surface = font.render(title, True, COLORS["ink"])
         desc_surface = small_font.render(description, True, COLORS["ink_soft"])
 
@@ -300,6 +321,43 @@ def draw_game_over():
     center_text("Game Over", big_font, COLORS["ink"], 182)
     center_text(game_over_message, font, COLORS["accent_dark"], 264)
     center_text("Press any key to head back to the menu", small_font, COLORS["ink_soft"], 332)
+
+
+def handle_menu_key(key):
+    for index, menu_key in enumerate(MENU_KEYS[: len(GAME_ORDER)]):
+        if key == menu_key:
+            open_setup(GAME_ORDER[index])
+            return
+
+
+def handle_play_keydown(event):
+    if active_game == "snake":
+        games["snake"].handle_keydown(event.key)
+    elif active_game == "sudoku":
+        message = games["sudoku"].handle_keydown(event.key, event.unicode)
+        if message:
+            set_game_over(message)
+    elif active_game == "space_invaders":
+        games["space_invaders"].handle_keydown(event.key)
+
+
+def update_active_game(dt, keys):
+    if active_game == "pong":
+        return games["pong"].update(dt, keys)
+    if active_game == "snake":
+        return games["snake"].update(dt)
+    if active_game == "breakout":
+        return games["breakout"].update(dt, keys)
+    if active_game == "space_invaders":
+        return games["space_invaders"].update(dt, keys)
+    return games["sudoku"].update(dt)
+
+
+def draw_active_game(offset_x=0, offset_y=0):
+    if active_game == "pong":
+        games["pong"].draw(screen, offset_x, offset_y)
+    else:
+        games[active_game].draw(screen)
 
 
 running = True
@@ -326,14 +384,7 @@ while running:
                 continue
 
             if state == "menu":
-                if event.key == pygame.K_1:
-                    open_setup("pong")
-                elif event.key == pygame.K_2:
-                    open_setup("snake")
-                elif event.key == pygame.K_3:
-                    open_setup("breakout")
-                elif event.key == pygame.K_4:
-                    open_setup("sudoku")
+                handle_menu_key(event.key)
                 continue
 
             if state == "setup":
@@ -351,27 +402,16 @@ while running:
                 state = "menu"
                 continue
 
-            if state == "play" and active_game == "snake":
-                snake.handle_keydown(event.key)
-            elif state == "play" and active_game == "sudoku":
-                message = sudoku.handle_keydown(event.key, event.unicode)
-                if message:
-                    set_game_over(message)
+            if state == "play":
+                handle_play_keydown(event)
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if state == "play" and active_game == "sudoku":
-                sudoku.handle_mouse(event.pos)
+                games["sudoku"].handle_mouse(event.pos)
 
     if state == "play":
         keys = pygame.key.get_pressed()
-        if active_game == "pong":
-            message = pong.update(dt, keys)
-        elif active_game == "snake":
-            message = snake.update(dt)
-        elif active_game == "breakout":
-            message = breakout.update(dt, keys)
-        else:
-            message = sudoku.update(dt)
+        message = update_active_game(dt, keys)
         if message:
             set_game_over(message)
 
@@ -391,23 +431,9 @@ while running:
     elif state == "setup":
         draw_setup()
     elif state == "play":
-        if active_game == "pong":
-            pong.draw(screen, offset_x, offset_y)
-        elif active_game == "snake":
-            snake.draw(screen)
-        elif active_game == "breakout":
-            breakout.draw(screen)
-        else:
-            sudoku.draw(screen)
+        draw_active_game(offset_x, offset_y)
     elif state == "pause":
-        if active_game == "pong":
-            pong.draw(screen)
-        elif active_game == "snake":
-            snake.draw(screen)
-        elif active_game == "breakout":
-            breakout.draw(screen)
-        else:
-            sudoku.draw(screen)
+        draw_active_game()
         draw_pause()
     elif state == "game_over":
         draw_game_over()

@@ -11,9 +11,9 @@ Currently implemented:
 - Snake
 - Breakout
 - Sudoku
+- Space Invaders
 
 Planned:
-- Space Invaders
 - Flappy Bird
 - Additional arcade-style games
 
@@ -24,6 +24,7 @@ Planned:
 - Snake with grid-based movement and score tracking
 - Breakout with lives, brick collision, and paddle angle control
 - Sudoku with a regular 9x9 board and selectable difficulty
+- Space Invaders with wave clearing, return fire, and difficulty presets
 - Time-based movement using delta time for smooth gameplay
 - Accurate collision detection and response
 
@@ -43,11 +44,12 @@ Planned:
 
 | Key | Action |
 |-----|--------|
-| 1 / 2 / 3 / 4 | Choose Pong / Snake / Breakout / Sudoku from the main menu |
+| 1 / 2 / 3 / 4 / 5 | Choose Pong / Snake / Breakout / Sudoku / Space Invaders from the main menu |
 | 1 / 2 / 3 / 4 | Choose an option on the setup screen |
 | W / S | Move left paddle |
 | Up / Down | Move right paddle |
 | Arrow Keys / WASD | Control Snake or Breakout |
+| Space | Fire in Space Invaders |
 | Mouse / Arrow Keys | Select Sudoku cells |
 | 1-9 / Backspace | Fill or clear Sudoku cells |
 | P | Pause / Resume |
@@ -63,6 +65,7 @@ arcade-games/
 │   ├── breakout.py
 │   ├── pong.py
 │   ├── snake.py
+│   ├── space_invaders.py
 │   └── sudoku.py
 ├── .gitignore
 ├── LICENSE
@@ -93,6 +96,11 @@ Sudoku includes:
 - A standard 9x9 board
 - Easy, Medium, and Hard puzzle generation
 - Mouse or keyboard cell selection with number entry
+
+Space Invaders includes:
+- Three difficulty presets
+- Player shooting and enemy return fire
+- Multi-row alien wave with score and lives
 
 ## Installation
 
