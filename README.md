@@ -137,16 +137,6 @@ pip install -r requirements.txt
 python main.py
 ```
 
-If `python -m venv .venv` hangs or takes too long on an Anaconda-managed Python, try:
-
-```bash
-conda deactivate
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python main.py
-```
-
 You can also skip the virtual environment and install locally with `python -m pip install -r requirements.txt` if you just want to run the project quickly.
 
 ## Testing
