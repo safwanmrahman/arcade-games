@@ -376,92 +376,99 @@ def draw_active_game(offset_x=0, offset_y=0):
         games[active_game].draw(screen)
 
 
-running = True
-while running:
-    dt = clock.tick(120) / 1000
+def main():
+    global state, shake_timer
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+    running = True
+    while running:
+        dt = clock.tick(120) / 1000
 
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_q:
-                pygame.quit()
-                sys.exit()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-            if event.key == pygame.K_ESCAPE:
-                if state == "menu":
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
                     pygame.quit()
                     sys.exit()
-                if state in ("setup", "pause", "game_over"):
-                    state = "menu"
-                elif state == "play":
+
+                if event.key == pygame.K_ESCAPE:
+                    if state == "menu":
+                        pygame.quit()
+                        sys.exit()
+                    if state in ("setup", "pause", "game_over"):
+                        state = "menu"
+                    elif state == "play":
+                        state = "pause"
+                    continue
+
+                if state == "menu":
+                    handle_menu_key(event.key)
+                    continue
+
+                if state == "setup":
+                    apply_setup_choice(event.key)
+                    continue
+
+                if event.key == pygame.K_p and state == "play":
                     state = "pause"
-                continue
+                    continue
+                if event.key == pygame.K_p and state == "pause":
+                    state = "play"
+                    continue
 
-            if state == "menu":
-                handle_menu_key(event.key)
-                continue
+                if state == "game_over":
+                    state = "menu"
+                    continue
 
-            if state == "setup":
-                apply_setup_choice(event.key)
-                continue
+                if state == "play":
+                    handle_play_keydown(event)
 
-            if event.key == pygame.K_p and state == "play":
-                state = "pause"
-                continue
-            if event.key == pygame.K_p and state == "pause":
-                state = "play"
-                continue
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if state == "play" and active_game == "sudoku":
+                    games["sudoku"].handle_mouse(event.pos)
 
-            if state == "game_over":
-                state = "menu"
-                continue
+        if state == "play":
+            keys = pygame.key.get_pressed()
+            message = update_active_game(dt, keys)
+            if message:
+                set_game_over(message)
 
-            if state == "play":
-                handle_play_keydown(event)
+        update_particles(dt)
 
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if state == "play" and active_game == "sudoku":
-                games["sudoku"].handle_mouse(event.pos)
+        offset_x = 0
+        offset_y = 0
+        if shake_timer > 0:
+            shake_timer -= dt
+            offset_x = random.randint(-4, 4)
+            offset_y = random.randint(-4, 4)
 
-    if state == "play":
-        keys = pygame.key.get_pressed()
-        message = update_active_game(dt, keys)
-        if message:
-            set_game_over(message)
+        draw_background()
 
-    update_particles(dt)
+        if state == "menu":
+            draw_menu()
+        elif state == "setup":
+            draw_setup()
+        elif state == "play":
+            draw_active_game(offset_x, offset_y)
+        elif state == "pause":
+            draw_active_game()
+            draw_pause()
+        elif state == "game_over":
+            draw_game_over()
 
-    offset_x = 0
-    offset_y = 0
-    if shake_timer > 0:
-        shake_timer -= dt
-        offset_x = random.randint(-4, 4)
-        offset_y = random.randint(-4, 4)
+        for particle in particles:
+            pygame.draw.circle(
+                screen,
+                particle[3],
+                (int(particle[0][0]) + offset_x, int(particle[0][1]) + offset_y),
+                max(1, int(particle[2])),
+            )
 
-    draw_background()
+        pygame.display.flip()
 
-    if state == "menu":
-        draw_menu()
-    elif state == "setup":
-        draw_setup()
-    elif state == "play":
-        draw_active_game(offset_x, offset_y)
-    elif state == "pause":
-        draw_active_game()
-        draw_pause()
-    elif state == "game_over":
-        draw_game_over()
+    pygame.quit()
 
-    for particle in particles:
-        pygame.draw.circle(
-            screen,
-            particle[3],
-            (int(particle[0][0]) + offset_x, int(particle[0][1]) + offset_y),
-            max(1, int(particle[2])),
-        )
 
-    pygame.display.flip()
-
-pygame.quit()
+if __name__ == "__main__":
+    main()

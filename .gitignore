@@ -1,11 +1,23 @@
-# Mac
+# macOS
 .DS_Store
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local tool state
+.python-version
 
 # Build files
 *.o
 *.out
 *.exe
-
-# Python
-__pycache__/
-*.pyc
